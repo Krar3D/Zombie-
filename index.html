@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>هجوم الزومبي - البقاء الأخير</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+
+        :root {
+            --bg-night: #0a0e14;
+            --ui-glow: rgba(0, 255, 100, 0.2);
+            --blood-red: #cc0000;
+            --heal-green: #00ff9d;
+            --overshield-blue: #00aaff;
+            --barricade-color: #8b5a2b;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%; margin: 0; padding: 0;
+            background: var(--bg-night);
+            color: white; font-family: 'Tajawal', sans-serif;
+            overflow: hidden; overscroll-behavior: none; touch-action: none;
+        }
+
+        /* ------------------ تأثير المطر والخلفية ------------------ */
+        .rain-bg {
+            position: absolute; top: -100%; left: 0; width: 100%; height: 200%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0) 80%, rgba(255,255,255,0.15) 100%),
+                repeating-linear-gradient(transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 22px);
+            background-size: 100px 100px;
+            animation: rainDrop 0.6s linear infinite;
+            z-index: 0; pointer-events: none; opacity: 0.8;
+        }
+        @keyframes rainDrop { 0% { transform: translateY(0) rotate(10deg); } 100% { transform: translateY(100px) rotate(10deg); } }
+
+        /* حالة الضرر */
+        @keyframes zombieDamage {
+            0%, 100% { transform: translate(0, 0); box-shadow: inset 0 0 0 transparent; }
+            20% { transform: translate(-15px, 15px); box-shadow: inset 0 0 100px var(--blood-red); }
+            40% { transform: translate(15px, -15px); box-shadow: inset 0 0 100px var(--blood-red); }
+            60% { transform: translate(-15px, -15px); box-shadow: inset 0 0 100px var(--blood-red); }
+            80% { transform: translate(15px, 15px); box-shadow: inset 0 0 100px var(--blood-red); }
+        }
+        body.damage-mode { animation: zombieDamage 0.5s ease-in-out; }
+
+        /* حالة العلاج */
+        body.heal-mode { animation: healFlash 0.5s ease-in-out; }
+        @keyframes healFlash {
+            0%, 100% { box-shadow: inset 0 0 0 transparent; }
+            50% { box-shadow: inset 0 0 80px var(--heal-green); }
+        }
+
+        /* حالة الدرع الإضافي (الإنقاذ) */
+        body.shield-mode { animation: shieldFlash 0.6s ease-in-out; }
+        @keyframes shieldFlash {
+            0%, 100% { box-shadow: inset 0 0 0 transparent; }
+            50% { box-shadow: inset 0 0 100px var(--overshield-blue); }
+        }
+
+        /* ------------------ ساحة البقاء ------------------ */
+        .survival-arena {
+            position: absolute; top: 8%; left: 0; width: 100%; height: 45%;
+            display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+            z-index: 10; perspective: 1000px;
+        }
+
+        /* الزومبي العادي والزعيم */
+        .zombie-wrap {
+            position: absolute; top: 10%; display: flex; flex-direction: column; align-items: center;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .zombie-char {
+            font-size: 5.5rem; 
+            filter: drop-shadow(0 20px 15px rgba(0,0,0,0.9));
+            animation: zombieWalk 2s alternate infinite ease-in-out;
+        }
+        
+        .zombie-boss {
+            font-size: 8rem; filter: drop-shadow(0 0 30px var(--blood-red));
+            animation: bossWalk 1.5s alternate infinite ease-in-out !important;
+        }
+        
+        @keyframes zombieWalk { 0% { transform: rotate(-5deg); } 100% { transform: rotate(5deg); } }
+        @keyframes bossWalk { 0% { transform: scale(1) rotate(-3deg); } 100% { transform: scale(1.05) rotate(3deg); } }
+
+        /* شريط دم الزعيم */
+        .boss-hp-wrapper {
+            width: 120px; height: 12px; background: rgba(0,0,0,0.8);
+            border: 2px solid var(--blood-red); border-radius: 6px;
+            overflow: hidden; opacity: 0; transition: opacity 0.5s; margin-bottom: 10px;
+        }
+        .boss-hp-wrapper.show { opacity: 1; }
+        .boss-hp-fill { height: 100%; width: 100%; background: var(--blood-red); transition: width 0.4s; }
+
+        /* تأثير طلقة الشوتگن */
+        .shot-fx {
+            position: absolute; font-size: 4rem; opacity: 0; pointer-events: none;
+            z-index: 20; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+        .zombie-wrap.shot { animation: zombieHit 0.5s forwards !important; }
+        @keyframes zombieHit {
+            0% { transform: translateY(0) scale(1) rotate(0); filter: brightness(1); }
+            20% { transform: translateY(-30px) scale(0.9) rotate(-15deg); filter: brightness(2) sepia(1) hue-rotate(-50deg) saturate(5); }
+            100% { transform: translateY(0) scale(1) rotate(0); filter: brightness(1); }
+        }
+        .shot-fx.active { animation: blastAnim 0.4s ease-out; }
+        @keyframes blastAnim {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+        }
+
+        /* هجوم الزومبي (إجابة خطأ) */
+        .zombie-wrap.attack { animation: zombieAttack 0.5s forwards !important; }
+        @keyframes zombieAttack {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(120px) scale(1.5) rotate(10deg); }
+            100% { transform: translateY(50px) scale(1.2); }
+        }
+        .zombie-wrap.boss-attack { animation: bossAttack 0.6s forwards !important; }
+        @keyframes bossAttack {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(150px) scale(1.8) rotate(-10deg); }
+            100% { transform: translateY(20px) scale(1); }
+        }
+
+        /* الناجي (Survivor) */
+        .survivor-char {
+            font-size: 3rem; position: absolute; bottom: 20%; left: 15%;
+            transition: all 0.5s; z-index: 12; opacity: 0; pointer-events: none;
+            filter: drop-shadow(0 10px 5px rgba(0,0,0,0.8));
+        }
+        .survivor-char.active { opacity: 1; animation: panic 0.4s infinite alternate; }
+        @keyframes panic { 0% { transform: translateY(0); } 100% { transform: translateY(-15px); } }
+        
+        .survivor-char.saved { animation: runToSafety 1s forwards; }
+        @keyframes runToSafety { 
+            0% { transform: scale(1); } 
+            100% { left: 50%; bottom: 5%; opacity: 0; transform: scale(0.5); } 
+        }
+        
+        .survivor-char.dead { animation: transformZombie 1s forwards; }
+        @keyframes transformZombie { 
+            0% { filter: grayscale(0); } 
+            100% { transform: scale(1.2) rotate(10deg); filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(3); opacity: 0; } 
+        }
+
+        /* الجدار (Barricade) */
+        .barricade {
+            font-size: 4rem; position: absolute; bottom: 5%;
+            width: 120%; text-align: center; letter-spacing: -10px;
+            z-index: 15; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.8));
+            transition: all 0.3s;
+        }
+        
+        /* ------------------ الواجهة العلوية (HUD) ------------------ */
+        .top-hud {
+            position: fixed; top: 15px; left: 15px; right: 15px;
+            display: flex; justify-content: space-between; align-items: center; z-index: 100;
+        }
+        
+        .hp-container {
+            flex: 1; max-width: 200px; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 8px;
+            border: 2px solid #444; position: relative;
+        }
+        .hp-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: #fff; display: flex; justify-content: space-between;}
+        .hp-bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
+        .hp-bar { height: 100%; width: 100%; background: var(--heal-green); transition: width 0.3s ease, background 0.3s, box-shadow 0.3s; }
+        
+        .highscore-hud {
+            background: rgba(255, 215, 0, 0.15); color: #ffd700;
+            padding: 5px 12px; border-radius: 5px; font-weight: 700; font-size: 0.85rem;
+            border: 1px solid rgba(255, 215, 0, 0.5); box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+        }
+
+        /* ------------------ واجهة الأسئلة والأهداف ------------------ */
+        .ui-layer {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 100;
+            background: rgba(10, 15, 10, 0.95); border-top: 3px solid #334433;
+            padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            border-radius: 20px 20px 0 0; width: 100%; max-width: 600px; text-align: center;
+            box-shadow: 0 -15px 40px rgba(0,0,0,0.9);
+            max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+        }
+        .ui-layer::-webkit-scrollbar { width: 5px; } .ui-layer::-webkit-scrollbar-thumb { background: #556655; border-radius: 5px; }
+
+        .top-tools { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .q-counter { font-size: 0.95rem; color: #fff; font-weight: bold; margin: 0; background: #223322; padding: 4px 15px; border-radius: 5px; border: 1px solid #445544; transition: all 0.3s;}
+        
+        .medkit-btn { background: #1a4a1a; border: 1px solid var(--heal-green); padding: 6px 15px; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; font-family: 'Tajawal', sans-serif;}
+        .medkit-btn:disabled { background: #222; color: #666; border-color: #444; cursor: default;}
+        .medkit-btn:active:not(:disabled) { transform: scale(0.95); }
+
+        .timer-container { width: 100%; height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 15px; }
+        .timer-bar { height: 100%; width: 100%; background: var(--heal-green); transition: width 1s linear, background 0.3s; }
+        .timer-warning { background: var(--blood-red) !important; box-shadow: 0 0 10px var(--blood-red); }
+
+        h2 { margin: 0 0 20px 0; color: #fff; font-size: 1.1rem; line-height: 1.5; text-shadow: 0 2px 4px #000;}
+        
+        .options { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        
+        button.opt-btn { 
+            background: rgba(30, 40, 30, 0.8); color: white; 
+            border: 1px solid #445544; padding: 12px; 
+            border-radius: 8px; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; 
+            cursor: pointer; transition: all 0.2s; text-align: center; font-weight: bold;
+            box-shadow: 0 4px 0 #111;
+        }
+        button.opt-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #000; }
+        button.opt-btn:disabled { opacity: 0.7; cursor: default; transform: none; box-shadow: none; }
+
+        .speech-bubble { background: #fff; color: #000; padding: 6px 15px; border-radius: 5px; font-size: 0.95rem; font-weight: 900; margin: 0 auto 15px auto; display: none; opacity: 0; transition: opacity 0.3s; width: fit-content; text-transform: uppercase; }
+
+        #explanation-box { display: none; margin-top: 15px; background: rgba(0, 0, 0, 0.6); padding: 15px; border-radius: 8px; border: 1px solid #555; animation: fadeIn 0.4s; text-align: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        #explanation-box h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
+        #explanation-box p { margin: 0 0 15px 0; font-size: 0.9rem; line-height: 1.6; color: #e2e8f0; }
+
+        #next-btn { background: var(--heal-green); color: #000; font-weight: 900; width: 100%; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-size: 1.1rem; text-transform: uppercase; }
+
+        /* شاشات النهاية */
+        #completion-screen, #review-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,15,10,0.98);
+            z-index: 200; padding: 30px 20px; text-align: center; display: none; overflow-y: auto;
+        }
+        
+        .trophy { font-size: 4rem; margin: 0; filter: drop-shadow(0 0 20px rgba(0,255,157,0.5)); position: relative; z-index: 201;}
+        .score-text { font-size: 3rem; margin: 10px 0; font-weight: 900; letter-spacing: 2px; position: relative; z-index: 201;}
+        #final-desc { font-size: 1rem; color: #aaa; margin-bottom: 25px; line-height: 1.5; position: relative; z-index: 201;}
+        
+        .action-btns { display: flex; flex-direction: column; gap: 12px; max-width: 300px; margin: 0 auto; position: relative; z-index: 201;}
+        .action-btns button { border: none; font-weight: bold; color: #000; padding: 15px; border-radius: 5px; cursor: pointer; font-size: 1.1rem; text-transform: uppercase;}
+        .btn-restart { background: #fff; }
+        .btn-review { background: #334433; color: #fff;}
+
+        .review-item { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: right; }
+        .review-q { font-weight: bold; color: #fff; margin-bottom: 10px; font-size: 0.95rem; line-height: 1.4; }
+        .review-ans { font-size: 0.9rem; margin-bottom: 8px; }
+        .ans-correct { background: rgba(0, 255, 157, 0.2); color: var(--heal-green); padding: 2px 6px; border-radius: 4px; }
+        .ans-wrong { background: rgba(255, 50, 50, 0.2); color: var(--blood-red); padding: 2px 6px; border-radius: 4px; }
+        .review-exp { font-size: 0.85rem; color: #aaa; margin-top: 10px; border-top: 1px dashed #444; padding-top: 10px; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="rain-bg"></div>
+
+    <div class="top-hud">
+        <div class="hp-container">
+            <div class="hp-name"><span>🧱 صحة الجدار</span> <span id="hp-txt">100%</span></div>
+            <div class="hp-bar-bg"><div class="hp-bar" id="hp-bar"></div></div>
+        </div>
+        <div class="highscore-hud" id="highscore-badge">🏆 أعلى نجاة: 0</div>
+    </div>
+
+    <!-- ساحة الزومبي -->
+    <div class="survival-arena">
+        <div class="survivor-char" id="survivor">🏃‍♂️</div>
+        <div class="zombie-wrap" id="zombie-wrap">
+            <div class="boss-hp-wrapper" id="boss-hp-wrapper">
+                <div class="boss-hp-fill" id="boss-hp-fill"></div>
+            </div>
+            <div class="zombie-char" id="zombie">🧟‍♂️</div>
+            <div class="shot-fx" id="shot-fx">💥</div>
+        </div>
+        <div class="barricade" id="barricade">🧱🧱🧱🧱🧱🧱</div>
+    </div>
+
+    <!-- واجهة الأسئلة -->
+    <div class="ui-layer" id="ui-container">
+        <div id="quiz-content">
+            <div class="top-tools">
+                <div class="q-counter" id="q-counter">موجة 1 / 10</div>
+                <button class="medkit-btn" id="medkit-btn" onclick="activateMedkit()">🩹 إسعاف (1)</button>
+            </div>
+            
+            <div class="timer-container">
+                <div class="timer-bar" id="timer-bar"></div>
+            </div>
+
+            <h2 id="question-text">جاري التحميل...</h2>
+            
+            <div class="speech-bubble" id="speech-bubble"></div>
+
+            <div class="options" id="options-container"></div>
+            
+            <div id="explanation-box">
+                <h3 id="result-title"></h3>
+                <p id="explanation-text"></p>
+                <button id="next-btn" onclick="moveToNext()">الموجة التالية 🧟‍♂️</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشات النهاية -->
+    <div id="completion-screen">
+        <div class="trophy" id="final-trophy">🏆</div>
+        <h2 id="final-praise">جاري تقييم النجاة...</h2>
+        <p id="final-desc">جاري التقييم...</p>
+        <div class="score-text" id="final-score">النقاط: 0</div>
+        <div class="action-btns">
+            <button class="btn-review" onclick="showReview()">سجل النجاة 📋</button>
+            <button class="btn-restart" onclick="startFresh()">محاولة بقاء جديدة 🔄</button>
+        </div>
+    </div>
+
+    <div id="review-screen">
+        <h2 style="text-align: center; color: #fff; margin-bottom: 20px;">سجل النجاة</h2>
+        <div id="review-list"></div>
+        <button class="btn-restart" style="width: 100%; margin-top: 15px; padding: 15px;" onclick="startFresh()">إنهاء السجل</button>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const gainNode = audioCtx.createGain();
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'shotgun') { 
+                let osc1 = audioCtx.createOscillator(); let osc2 = audioCtx.createOscillator();
+                osc1.type = 'square'; osc2.type = 'sawtooth';
+                osc1.frequency.setValueAtTime(100, audioCtx.currentTime);
+                osc1.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.3);
+                osc2.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc2.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+                osc1.connect(gainNode); osc2.connect(gainNode);
+                osc1.start(); osc2.start();
+                osc1.stop(audioCtx.currentTime + 0.4); osc2.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'zombie') { 
+                let osc = audioCtx.createOscillator();
+                osc.type = 'sawtooth'; 
+                osc.frequency.setValueAtTime(60, audioCtx.currentTime); 
+                osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.6); 
+                gainNode.gain.setValueAtTime(0.7, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+                osc.connect(gainNode); osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            } else if (type === 'tick') {
+                let osc = audioCtx.createOscillator();
+                osc.type = 'sine'; 
+                osc.frequency.setValueAtTime(40, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+                osc.connect(gainNode); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'heal') {
+                let osc = audioCtx.createOscillator();
+                osc.type = 'sine'; 
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.5);
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+                osc.connect(gainNode); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'bossRoar') {
+                let osc = audioCtx.createOscillator();
+                osc.type = 'sawtooth'; 
+                osc.frequency.setValueAtTime(50, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 1.5);
+                gainNode.gain.setValueAtTime(0.9, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.5);
+                osc.connect(gainNode); osc.start(); osc.stop(audioCtx.currentTime + 1.5);
+            } else if (type === 'rescue') {
+                let osc = audioCtx.createOscillator();
+                osc.type = 'triangle'; 
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.4);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+                osc.connect(gainNode); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'scream') {
+                let osc = audioCtx.createOscillator();
+                osc.type = 'sawtooth'; 
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.8);
+                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
+                osc.connect(gainNode); osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+            }
+        }
+
+        // 10 أسئلة معلومات عامة صعبة
+        let quizData = [
+            { q: "ما هي فصيلة الدم الأندر في العالم؟", options: ["O سالب", "AB سالب", "B موجب", "A سالب"], correct: 1, explanation: "فصيلة الدم AB- هي الأندر في العالم، وتوجد في نسبة ضئيلة جداً من البشر." },
+            { q: "ما هو الحيوان الثديي الوحيد الذي لا يمتلك حبالاً صوتية؟", options: ["الفيل", "الكنغر", "الزرافة", "الحوت الأزرق"], correct: 2, explanation: "الزرافة لا تمتلك حبالاً صوتية وتصدر أصواتاً منخفضة التردد لا يسمعها الإنسان غالباً." },
+            { q: "إلى أي عنصر كيميائي يشير الرمز 'W' في الجدول الدوري؟", options: ["التنجستن", "الماء", "الزنك", "الولفراميت"], correct: 0, explanation: "يشير إلى التنجستن (Tungsten)، واشتق الرمز W من اسمه القديم Wolfram." },
+            { q: "ما هي أعمق بحيرة للماء العذب في العالم؟", options: ["بحيرة سوبيريور", "بحيرة تيتيكاكا", "بحيرة بايكال", "بحيرة فيكتوريا"], correct: 2, explanation: "بحيرة بايكال في روسيا هي الأعمق وتحتوي على 20% من المياه العذبة غير المتجمدة في العالم." },
+            { q: "ما هو أكبر عضو في جسم الإنسان البالغ؟", options: ["الكبد", "الرئتين", "الجلد", "الأمعاء الدقيقة"], correct: 2, explanation: "الجلد يعتبر العضو الأكبر ويمثل حوالي 15% من وزن الجسم." },
+            { q: "ما هي أصغر عظمة في جسم الإنسان؟", options: ["عظمة الأنف", "عظمة الركاب في الأذن", "سلاميات الأصابع", "عظمة الفك"], correct: 1, explanation: "عظمة الركاب (Stapes) الموجودة في الأذن الوسطى هي الأصغر." },
+            { q: "ما هو أول حاسوب إلكتروني عام الأغراض تم اختراعه؟", options: ["ENIAC", "UNIVAC", "IBM 701", "Apple I"], correct: 0, explanation: "حاسوب ENIAC الذي تم تطويره عام 1945 يعتبر الأول من نوعه." },
+            { q: "ما هي أطول سلسلة جبال قارية في العالم؟", options: ["جبال الألب", "جبال الهيمالايا", "جبال روكي", "جبال الأنديز"], correct: 3, explanation: "جبال الأنديز في أمريكا الجنوبية تمتد لمسافة تزيد عن 7000 كم." },
+            { q: "من هو العالم الذي ابتكر لغة البرمجة 'C'؟", options: ["بيل غيتس", "لينوس تورفالدس", "دينيس ريتشي", "جيمس غوسلينغ"], correct: 2, explanation: "دينيس ريتشي ابتكر لغة C في مختبرات بيل في أوائل السبعينات." },
+            { q: "ما هو الكوكب الذي يعتبر يومه أطول من سنته؟", options: ["عطارد", "المريخ", "أورانوس", "الزهرة"], correct: 3, explanation: "كوكب الزهرة يدور حول نفسه ببطء شديد (243 يوم أرضي) بينما يدور حول الشمس في 225 يوماً." }
+        ];
+
+        const happyReplies = ["طلقة بالراس! 🔫", "عاش القناص! 🎯", "الزومبي تراجع! 💨", "جدارنا صامد! 🧱", "هيدشوت! 💀"];
+        const sadReplies = ["الزومبي أكل الجدار! 🧟‍♂️", "الجدار يتكسر! ⚠️", "عضة قوية! 🩸", "راح نموت! ☠️"];
+
+        let currentQ = 0; let score = 0; let userAnswers = [];
+        let timeLeft = 30; let maxTime = 30; let timerInterval; let tickInterval;
+        let barricadeHP = 100;
+        let zombiePosition = 10; 
+        
+        let isMedkitAvailable = true;
+        let currentBossHits = 0;
+
+        let highScore = localStorage.getItem('zombieQuizSurvival') || 0;
+        document.getElementById('highscore-badge').innerText = `🏆 أعلى نجاة: ${highScore}`;
+
+        const bubble = document.getElementById('speech-bubble');
+        const qText = document.getElementById('question-text'); const optsContainer = document.getElementById('options-container');
+        const expBox = document.getElementById('explanation-box'); const resTitle = document.getElementById('result-title');
+        const expText = document.getElementById('explanation-text'); const nextBtn = document.getElementById('next-btn');
+        const timerBar = document.getElementById('timer-bar'); const uiContainer = document.getElementById('ui-container');
+        
+        const zombieWrap = document.getElementById('zombie-wrap'); const zombie = document.getElementById('zombie'); 
+        const shotFx = document.getElementById('shot-fx');
+        const barricade = document.getElementById('barricade');
+        const hpBar = document.getElementById('hp-bar'); const hpTxt = document.getElementById('hp-txt');
+        const medkitBtn = document.getElementById('medkit-btn');
+        const bossHpWrapper = document.getElementById('boss-hp-wrapper'); const bossHpFill = document.getElementById('boss-hp-fill');
+        const qCounter = document.getElementById('q-counter');
+        const survivor = document.getElementById('survivor');
+
+        function updateHPUI() {
+            barricadeHP = Math.max(0, barricadeHP); 
+            let visualWidth = Math.min(100, barricadeHP); 
+            hpBar.style.width = `${visualWidth}%`; 
+            hpTxt.innerText = `${barricadeHP}%`;
+            
+            if (barricadeHP > 100) {
+                hpBar.style.background = "var(--overshield-blue)";
+                hpBar.style.boxShadow = "0 0 10px var(--overshield-blue)";
+            } else if(barricadeHP <= 40) {
+                hpBar.style.background = "var(--blood-red)";
+                hpBar.style.boxShadow = "none";
+            } else {
+                hpBar.style.background = "var(--heal-green)";
+                hpBar.style.boxShadow = "none";
+            }
+            
+            if(barricadeHP <= 60 && barricadeHP > 20) barricade.innerText = "🧱 🧱 🧱";
+            else if(barricadeHP <= 20) barricade.innerText = "🧱   🧱";
+            else barricade.innerText = "🧱🧱🧱🧱🧱🧱";
+        }
+
+        function activateMedkit() {
+            if (isMedkitAvailable && barricadeHP > 0) {
+                initAudio(); playSound('heal');
+                isMedkitAvailable = false;
+                barricadeHP += 30;
+                updateHPUI();
+                
+                medkitBtn.innerText = "🩹 استُخدمت";
+                medkitBtn.disabled = true;
+
+                document.body.classList.add('heal-mode');
+                setTimeout(() => document.body.classList.remove('heal-mode'), 600);
+            }
+        }
+
+        function startFresh() {
+            document.body.classList.remove('damage-mode', 'heal-mode', 'shield-mode');
+            document.getElementById('completion-screen').style.display = 'none';
+            document.getElementById('review-screen').style.display = 'none';
+            document.getElementById('quiz-content').style.display = 'block';
+            
+            currentQ = 0; score = 0; userAnswers = []; barricadeHP = 100; zombiePosition = 10;
+            currentBossHits = 0;
+            
+            zombieWrap.style.top = `${zombiePosition}%`;
+            zombie.innerText = "🧟‍♂️"; 
+            zombie.classList.remove('zombie-boss');
+            bossHpWrapper.classList.remove('show');
+            bossHpFill.style.width = "100%";
+            survivor.className = "survivor-char";
+            
+            isMedkitAvailable = true;
+            medkitBtn.innerText = "🩹 إسعاف (1)";
+            medkitBtn.disabled = false;
+
+            updateHPUI();
+            loadQ();
+        }
+
+        function startTimer() {
+            timeLeft = maxTime;
+            timerBar.style.width = '100%'; timerBar.classList.remove('timer-warning');
+            clearInterval(timerInterval); clearInterval(tickInterval);
+            
+            if(audioCtx) tickInterval = setInterval(() => playSound('tick'), 1000);
+
+            timerInterval = setInterval(() => {
+                timeLeft--; timerBar.style.width = `${(timeLeft / maxTime) * 100}%`;
+                if (timeLeft === 5) { timerBar.classList.add('timer-warning'); clearInterval(tickInterval); if(audioCtx) tickInterval = setInterval(() => playSound('tick'), 300); }
+                if (timeLeft <= 0) { clearInterval(timerInterval); clearInterval(tickInterval); checkAns(-1, null); }
+            }, 1000);
+        }
+
+        function loadQ() {
+            if (currentQ >= quizData.length || barricadeHP <= 0) {
+                showCompletion(); return;
+            }
+            
+            document.body.classList.remove('damage-mode', 'shield-mode');
+            zombieWrap.classList.remove('shot', 'attack', 'boss-attack');
+            shotFx.classList.remove('active');
+            survivor.className = "survivor-char"; 
+            void zombieWrap.offsetWidth; 
+
+            let isBossPhase = (currentQ >= 7); 
+            let isRescueWave = (currentQ === 2 || currentQ === 5); 
+
+            if (isRescueWave) {
+                survivor.classList.add('active');
+                survivor.innerText = "🏃‍♂️";
+                qCounter.innerText = `موجة ${currentQ + 1} / 10 - ⚠️ أنقذ الناجي (بسرعة!)`;
+                qCounter.style.background = "#b36b00";
+                qCounter.style.borderColor = "#ff9d00";
+            } else if (isBossPhase) {
+                if (currentQ === 7) { playSound('bossRoar'); }
+                zombie.innerText = "👹";
+                zombie.classList.add('zombie-boss');
+                bossHpWrapper.classList.add('show');
+                qCounter.innerText = `الزعيم: ضربة ${currentQ - 6} من 3`;
+                qCounter.style.background = "#4a0000"; qCounter.style.borderColor = "var(--blood-red)";
+                
+                zombiePosition = 15;
+                zombieWrap.style.top = `${zombiePosition}%`;
+            } else {
+                qCounter.innerText = `موجة ${currentQ + 1} / 7`;
+                qCounter.style.background = "#223322"; qCounter.style.borderColor = "#445544";
+            }
+
+            const current = quizData[currentQ];
+            qText.innerText = current.q; 
+            
+            optsContainer.innerHTML = '';
+            expBox.style.display = 'none'; bubble.style.display = 'none'; bubble.style.opacity = '0';
+            
+            nextBtn.innerText = (currentQ === quizData.length - 1) ? "الهروب للشمس 🌅" : "الموجة التالية 🧟‍♂️";
+            nextBtn.style.background = (currentQ === quizData.length - 1) ? "#ffd700" : "var(--heal-green)";
+
+            current.options.forEach((opt, idx) => {
+                let btn = document.createElement('button'); btn.className = 'opt-btn'; btn.innerText = opt;
+                btn.onclick = () => { initAudio(); checkAns(idx, btn); };
+                optsContainer.appendChild(btn);
+            });
+            startTimer();
+        }
+
+        function checkAns(idx, btn) {
+            clearInterval(timerInterval); clearInterval(tickInterval);
+            
+            const timeTaken = maxTime - timeLeft;
+            zombieWrap.classList.remove('shot', 'attack', 'boss-attack');
+            shotFx.classList.remove('active');
+            void zombieWrap.offsetWidth; 
+
+            const current = quizData[currentQ]; const btns = optsContainer.querySelectorAll('button');
+            const isCorrect = (idx === current.correct); const isTimeout = (idx === -1);
+            let isBossPhase = (currentQ >= 7);
+            let isRescueWave = (currentQ === 2 || currentQ === 5);
+            let fastRescue = (isRescueWave && isCorrect && timeTaken <= 5 && !isTimeout);
+            
+            userAnswers.push({
+                question: current.q, userPicked: isTimeout ? "لم يُجب (انتهى الوقت)" : current.options[idx],
+                correctAnswer: current.options[current.correct], isCorrect: isCorrect, explanation: current.explanation
+            });
+            
+            btns.forEach(b => b.disabled = true);
+            btns[current.correct].style.background = 'rgba(0, 255, 157, 0.2)'; 
+            btns[current.correct].style.borderColor = 'var(--heal-green)';
+
+            bubble.style.display = 'block'; setTimeout(() => bubble.style.opacity = '1', 10);
+
+            if (isCorrect) {
+                playSound('shotgun'); 
+                zombieWrap.classList.add('shot');
+                shotFx.classList.add('active');
+
+                if (fastRescue) {
+                    score += 2;
+                    playSound('rescue');
+                    survivor.classList.add('saved');
+                    barricadeHP += 20; 
+                    document.body.classList.add('shield-mode');
+                    resTitle.innerText = "🏃‍♂️ تم الإنقاذ! (+20% درع إضافي)";
+                    bubble.innerText = "بطل! أنقذته! 🛡️";
+                } else if (isRescueWave) {
+                    score += 1;
+                    playSound('scream');
+                    survivor.classList.add('dead');
+                    survivor.innerText = "🧟‍♂️";
+                    resTitle.innerText = "🩸 تأخرت بالإنقاذ..";
+                    bubble.innerText = "تحول لزومبي! 🧟‍♂️";
+                } else {
+                    score += 1;
+                    resTitle.innerText = "🔫 إصابة ناجحة"; 
+                    bubble.innerText = happyReplies[Math.floor(Math.random() * happyReplies.length)];
+                }
+
+                if (isBossPhase) {
+                    currentBossHits++;
+                    let hpPercentage = 100 - ((currentBossHits / 3) * 100);
+                    bossHpFill.style.width = `${hpPercentage}%`;
+                    
+                    if (currentBossHits === 3) {
+                        resTitle.innerText = "💀 تم القضاء على الزعيم!";
+                        bubble.innerText = "نهاية الكابوس! 💥";
+                    } else {
+                        resTitle.innerText = "🔫 ضربة موجعة للزعيم";
+                        bubble.innerText = "بعد طلقة ويموت! 🔥";
+                    }
+                } else if (!isRescueWave) {
+                    zombiePosition = Math.max(0, zombiePosition - 8);
+                    zombieWrap.style.top = `${zombiePosition}%`;
+                }
+                
+                if (!fastRescue && !isRescueWave) { resTitle.style.color = "var(--heal-green)"; }
+                else if (fastRescue) { resTitle.style.color = "var(--overshield-blue)"; }
+                else if (isRescueWave) { resTitle.style.color = "var(--blood-red)"; }
+                
+                bubble.style.color = "#000";
+
+            } else {
+                document.body.classList.add('damage-mode');
+                
+                if (isRescueWave) {
+                    playSound('scream');
+                    survivor.classList.add('dead');
+                    survivor.innerText = "🧟‍♂️";
+                }
+
+                if (isBossPhase) {
+                    playSound('bossRoar'); 
+                    zombieWrap.classList.add('boss-attack');
+                    barricadeHP -= 30;
+                    resTitle.innerText = "⚠️ ضربة زعيم قاضية!"; 
+                    bubble.innerText = "الجدار ينهار! 👹";
+                } else {
+                    playSound('zombie'); 
+                    zombieWrap.classList.add('attack');
+                    barricadeHP -= 20;
+                    zombiePosition += 15;
+                    zombieWrap.style.top = `${zombiePosition}%`;
+                    
+                    if (isTimeout) { 
+                        resTitle.innerText = "⏰ تأخرت!"; 
+                        bubble.innerText = "الوقت خلص! ⏰"; 
+                    } else { 
+                        resTitle.innerText = "⚠️ الجدار يتضرر!"; 
+                        bubble.innerText = sadReplies[Math.floor(Math.random() * sadReplies.length)]; 
+                    }
+                }
+
+                if(!isTimeout && btn) { 
+                    btn.style.background = 'rgba(204, 0, 0, 0.3)'; 
+                    btn.style.borderColor = 'var(--blood-red)'; 
+                }
+                resTitle.style.color = "var(--blood-red)"; bubble.style.color = "var(--blood-red)";
+            }
+
+            updateHPUI();
+            expText.innerText = current.explanation; expBox.style.display = 'block';
+            
+            if (barricadeHP <= 0) {
+                nextBtn.innerText = "لقد هلكت ☠️";
+                nextBtn.style.background = "var(--blood-red)";
+                nextBtn.style.color = "#fff";
+            }
+            
+            setTimeout(() => { uiContainer.scrollTo({ top: uiContainer.scrollHeight, behavior: 'smooth' }); }, 100);
+        }
+
+        function moveToNext() {
+            if (barricadeHP <= 0) {
+                showCompletion();
+                return;
+            }
+            currentQ++;
+            if(currentQ < quizData.length) { loadQ(); } 
+            else { showCompletion(); }
+        }
+
+        function showCompletion() {
+            document.getElementById('quiz-content').style.display = 'none'; bubble.style.display = 'none'; 
+            document.body.classList.remove('damage-mode', 'shield-mode');
+            bossHpWrapper.classList.remove('show');
+            survivor.className = "survivor-char";
+            
+            if (score > highScore) { highScore = score; localStorage.setItem('zombieQuizSurvival', highScore); document.getElementById('highscore-badge').innerText = `🏆 أعلى نجاة: ${highScore}`; }
+
+            const praiseText = document.getElementById('final-praise'); const descText = document.getElementById('final-desc');
+            const finalScoreObj = document.getElementById('final-score'); const trophy = document.getElementById('final-trophy');
+
+            if (barricadeHP > 0 && currentBossHits === 3) {
+                praiseText.innerText = "طلعت الشمس! 🌅"; praiseText.style.color = "var(--heal-green)"; finalScoreObj.style.color = "var(--heal-green)";
+                descText.innerText = `قضيت على الزعيم ونجوت! الجدار صامد بنسبة ${barricadeHP}%.`; 
+                trophy.innerText = "🦸‍♂️"; playSound('shotgun'); 
+                document.body.style.background = "linear-gradient(to top, #87CEEB, #0a0e14)"; 
+                zombie.innerText = "💀";
+            } else {
+                praiseText.innerText = "أكلك الزومبي! 🧟‍♂️"; praiseText.style.color = "var(--blood-red)"; finalScoreObj.style.color = "var(--blood-red)";
+                descText.innerText = "الجدار اتكسر والوحوش دخلت عليك.. ركز بمعلوماتك وجرب مرة ثانية!"; 
+                trophy.innerText = "☠️"; playSound('zombie');
+                zombie.innerText = "🩸"; barricade.innerText = "🏚️";
+            }
+
+            document.getElementById('final-score').innerText = `النقاط: ${score}`; 
+            document.getElementById('completion-screen').style.display = 'block';
+        }
+
+        function showReview() {
+            document.getElementById('completion-screen').style.display = 'none';
+            const reviewList = document.getElementById('review-list'); reviewList.innerHTML = ''; 
+
+            userAnswers.forEach((ans, index) => {
+                let div = document.createElement('div'); div.className = 'review-item';
+                let userStatus = ans.isCorrect ? `<span class="ans-correct">✔ ${ans.userPicked}</span>` : `<span class="ans-wrong">✖ ${ans.userPicked}</span> <br>(الصحيح: ${ans.correctAnswer})`;
+                let waveTxt = (index >= 7) ? `الزعيم:` : (index === 2 || index === 5) ? `موجة ${index + 1} (ناجي):` : `موجة ${index + 1}:`;
+                div.innerHTML = `<div class="review-q">${waveTxt} ${ans.question}</div><div class="review-ans">إطلاقك: ${userStatus}</div><div class="review-exp">💡 <b>معلومة النجاة:</b> ${ans.explanation}</div>`;
+                reviewList.appendChild(div);
+            });
+            document.getElementById('review-screen').style.display = 'block';
+        }
+
+        startFresh();
+    </script>
+</body>
+</html>
