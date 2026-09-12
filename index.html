@@ -394,18 +394,18 @@
             }
         }
 
-        // 10 أسئلة معلومات عامة صعبة
+        // الأسئلة المأخوذة من نماذج الامتحان
         let quizData = [
-            { q: "ما هي فصيلة الدم الأندر في العالم؟", options: ["O سالب", "AB سالب", "B موجب", "A سالب"], correct: 1, explanation: "فصيلة الدم AB- هي الأندر في العالم، وتوجد في نسبة ضئيلة جداً من البشر." },
-            { q: "ما هو الحيوان الثديي الوحيد الذي لا يمتلك حبالاً صوتية؟", options: ["الفيل", "الكنغر", "الزرافة", "الحوت الأزرق"], correct: 2, explanation: "الزرافة لا تمتلك حبالاً صوتية وتصدر أصواتاً منخفضة التردد لا يسمعها الإنسان غالباً." },
-            { q: "إلى أي عنصر كيميائي يشير الرمز 'W' في الجدول الدوري؟", options: ["التنجستن", "الماء", "الزنك", "الولفراميت"], correct: 0, explanation: "يشير إلى التنجستن (Tungsten)، واشتق الرمز W من اسمه القديم Wolfram." },
-            { q: "ما هي أعمق بحيرة للماء العذب في العالم؟", options: ["بحيرة سوبيريور", "بحيرة تيتيكاكا", "بحيرة بايكال", "بحيرة فيكتوريا"], correct: 2, explanation: "بحيرة بايكال في روسيا هي الأعمق وتحتوي على 20% من المياه العذبة غير المتجمدة في العالم." },
-            { q: "ما هو أكبر عضو في جسم الإنسان البالغ؟", options: ["الكبد", "الرئتين", "الجلد", "الأمعاء الدقيقة"], correct: 2, explanation: "الجلد يعتبر العضو الأكبر ويمثل حوالي 15% من وزن الجسم." },
-            { q: "ما هي أصغر عظمة في جسم الإنسان؟", options: ["عظمة الأنف", "عظمة الركاب في الأذن", "سلاميات الأصابع", "عظمة الفك"], correct: 1, explanation: "عظمة الركاب (Stapes) الموجودة في الأذن الوسطى هي الأصغر." },
-            { q: "ما هو أول حاسوب إلكتروني عام الأغراض تم اختراعه؟", options: ["ENIAC", "UNIVAC", "IBM 701", "Apple I"], correct: 0, explanation: "حاسوب ENIAC الذي تم تطويره عام 1945 يعتبر الأول من نوعه." },
-            { q: "ما هي أطول سلسلة جبال قارية في العالم؟", options: ["جبال الألب", "جبال الهيمالايا", "جبال روكي", "جبال الأنديز"], correct: 3, explanation: "جبال الأنديز في أمريكا الجنوبية تمتد لمسافة تزيد عن 7000 كم." },
-            { q: "من هو العالم الذي ابتكر لغة البرمجة 'C'؟", options: ["بيل غيتس", "لينوس تورفالدس", "دينيس ريتشي", "جيمس غوسلينغ"], correct: 2, explanation: "دينيس ريتشي ابتكر لغة C في مختبرات بيل في أوائل السبعينات." },
-            { q: "ما هو الكوكب الذي يعتبر يومه أطول من سنته؟", options: ["عطارد", "المريخ", "أورانوس", "الزهرة"], correct: 3, explanation: "كوكب الزهرة يدور حول نفسه ببطء شديد (243 يوم أرضي) بينما يدور حول الشمس في 225 يوماً." }
+            { q: "She usually ______ economics at university.", options: ["studies", "is studying", "has studied", "has been studying"], correct: 0, explanation: "نستخدم المضارع البسيط (studies) للتعبير عن العادات والحقائق المتكررة مثل 'usually'." },
+            { q: "Look! The professor ______ the exam papers right now.", options: ["collects", "is collecting", "has collected", "has been collecting"], correct: 1, explanation: "نستخدم المضارع المستمر (is collecting) لوصف حدث يحصل في هذه اللحظة، وتدل عليه كلمة 'right now' و 'Look!'." },
+            { q: "When I arrived at the bank, it ______ already ______.", options: ["closed", "was closing", "had closed", "had been closing"], correct: 2, explanation: "نستخدم الماضي التام (had closed) لأن إغلاق البنك حدث واكتمل قبل الوصول إليه في الماضي." },
+            { q: "While she ______ her economics essay, the power went out.", options: ["wrote", "was writing", "had written", "had been writing"], correct: 1, explanation: "نستخدم الماضي المستمر (was writing) لوصف حدث كان مستمراً عندما قطعه حدث آخر (انقطاع الكهرباء)." },
+            { q: "How long ______ you ______ for this exam?", options: ["do / study", "are / studying", "have / studied", "have / been studying"], correct: 3, explanation: "نستخدم المضارع التام المستمر (have been studying) مع 'How long' للسؤال عن مدة حدث بدأ في الماضي ولا يزال مستمراً." },
+            { q: "He ______ his degree in 2022.", options: ["finished", "was finishing", "had finished", "had been finishing"], correct: 0, explanation: "نستخدم الماضي البسيط (finished) لوجود فترة زمنية محددة ومنتهية في الماضي (in 2022)." },
+            { q: "Sherlock Holmes ______ the case last week.", options: ["was solving", "has solved", "solved", "had solved"], correct: 2, explanation: "نستخدم الماضي البسيط (solved) لوجود كلمة 'last week' التي تدل على ماضي منتهي." },
+            { q: "I ______ about the job offer all morning before I made a decision.", options: ["thought", "was thinking", "had thought", "had been thinking"], correct: 3, explanation: "نستخدم الماضي التام المستمر (had been thinking) للتركيز على استمرارية حدث (all morning) قبل حدث آخر في الماضي (made a decision)." },
+            { q: "The students ______ when the professor entered.", options: ["studied", "were studying", "had studying", "have studied"], correct: 1, explanation: "الماضي المستمر (were studying) يصف الحدث الذي كان مستمراً قبل أن يقطعه دخول الأستاذ." },
+            { q: "They ______ in New York for three years before they moved to Texas.", options: ["lived", "were living", "had lived", "have lived"], correct: 2, explanation: "نستخدم الماضي التام (had lived) للإشارة إلى حدث اكتمل (العيش في نيويورك لمدة ٣ سنوات) قبل حدث آخر في الماضي (الانتقال إلى تكساس)." }
         ];
 
         const happyReplies = ["طلقة بالراس! 🔫", "عاش القناص! 🎯", "الزومبي تراجع! 💨", "جدارنا صامد! 🧱", "هيدشوت! 💀"];
@@ -734,7 +734,7 @@
                 let div = document.createElement('div'); div.className = 'review-item';
                 let userStatus = ans.isCorrect ? `<span class="ans-correct">✔ ${ans.userPicked}</span>` : `<span class="ans-wrong">✖ ${ans.userPicked}</span> <br>(الصحيح: ${ans.correctAnswer})`;
                 let waveTxt = (index >= 7) ? `الزعيم:` : (index === 2 || index === 5) ? `موجة ${index + 1} (ناجي):` : `موجة ${index + 1}:`;
-                div.innerHTML = `<div class="review-q">${waveTxt} ${ans.question}</div><div class="review-ans">إطلاقك: ${userStatus}</div><div class="review-exp">💡 <b>معلومة النجاة:</b> ${ans.explanation}</div>`;
+                div.innerHTML = `<div class="review-q">${waveTxt} ${ans.question}</div><div class="review-ans">إطلاقك: ${userStatus}</div><div class="review-exp">💡 <b>توضيح:</b> ${ans.explanation}</div>`;
                 reviewList.appendChild(div);
             });
             document.getElementById('review-screen').style.display = 'block';
