@@ -650,13 +650,13 @@
                 if (isBossPhase) {
                     playSound('bossRoar'); 
                     zombieWrap.classList.add('boss-attack');
-                    barricadeHP -= 30;
+                    barricadeHP -= 10;
                     resTitle.innerText = "⚠️ ضربة زعيم قاضية!"; 
                     bubble.innerText = "الجدار ينهار! 👹";
                 } else {
                     playSound('zombie'); 
                     zombieWrap.classList.add('attack');
-                    barricadeHP -= 20;
+                    barricadeHP -= 10;
                     zombiePosition += 15;
                     zombieWrap.style.top = `${zombiePosition}%`;
                     
